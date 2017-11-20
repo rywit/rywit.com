@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Continued Fraction</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+
+    <style>
+body {
+  padding-top: 3.5rem;
+}
+
+#input-label {
+	font-weight: bold;
+	margin-bottom: 1px;
+}
+
+#error-msg {
+	font-weight: bold;
+	color: red;
+}
+    </style>
+
+  </head>
+
+  <body>
+
+    <main role="main">
+      <div class="row">
+        <div class="col-md-4 offset-4">
+          <label for="input-frac" class="form-label" id="input-label">Enter Fraction</label>
+          <input type="text" class="form-control" id="input-frac" placeholder="ex: 5/7">
+          <div id="error-msg" style="display:none"></div>
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+      <div id="output-frac"></div>
+    </main>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_HTML-full"></script>
+
+    <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+});
+    </script>
+
+	<script type="text/javascript">
+
+var gcd = function( a, b ) { return (!b) ? a : gcd( b, a % b ); };
+
+function Fraction( str ) {
+
+	// Save raw input string
+	this.raw = str;
+
+	// Parse the string into numerator and denominator
+	let parsed = this.parse( str );
+	this.num = parsed[ 0 ];
+	this.den = parsed[ 1 ];
+	
+	// Calculate the GCD of numerator and denominator
+	this.gcd = gcd( this.num, this.den );
+
+	// Reduce numerator and denominator by gcd
+	this.num /= this.gcd;
+	this.den /= this.gcd;
+
+	// Save reduced string
+	this.str = this.num + "/" + this.den;
+}
+
+// Largest supported expansion length
+Fraction.prototype.getMaxLenth = function() {
+	return 50;
+};
+
+Fraction.prototype.getStr = function() {
+	return ( this.gcd > 1 ? this.raw + "=" + this.str : this.str );
+}
+
+Fraction.prototype.parse = function( str ) {
+
+	// Look for digits, a slash and more digits
+	var found = str.match( /^\s*(\d+)\/(\d+)\s*$/ );
+	
+	// If the input string cannot be parsed, throw error
+	if ( found === null ) {
+		throw "Invalid fraction: " + str;
+	}
+	
+	// Convert matched tokens to ints
+	let num = parseInt( found[ 1 ] );
+	let den = parseInt( found[ 2 ] );
+	
+	// Return components of fraction
+	return [ num, den ];
+}
+
+Fraction.prototype.getSigns = function() {
+
+	let num = this.num;
+	let den = this.den;
+
+	let signs = [];
+	
+	while ( num > 1 || den > 1 ) {
+		let sign = ( num > den ? -1 : 1 );
+		let temp = num;
+		num = sign * ( den - num );
+		den = temp;
+		signs.push( sign );
+	}
+
+	return signs;
+}
+
+Fraction.prototype.getLatex = function() {
+
+
+	// This will hold our "cfrac" tokens
+	let str1 = [];
+	
+	// This will hold our trailing brackets
+	let str2 = [];
+
+	// Get the sequence of signs in the continued fraction representation
+	let signs = this.getSigns();
+	
+	// If our expansion is longer than the max lenth, throw error
+	if ( signs.length > this.getMaxLenth() ) {
+		throw "Expansion too large";
+	}
+
+	// Build each token as we descend down the expansion
+	$.each( signs, function( idx, val ) {
+		let addend = ( val === 1 ? "1+" : "1-" );
+		str1.push( "\\cfrac1{", addend );
+		str2.push( "}" );
+	} );
+	
+	return str1.join( "" ) + "\\cfrac1{1}" + str2.join( "" );
+}
+
+Fraction.prototype.getMathjax = function() {
+	return "$$" + this.getStr() + "=" + this.getLatex() + "$$";
+}
+
+function handleKeyup( outputElem, errorElem ) {
+
+	return function() {
+		// Hide any visible error messages
+		$( this ).removeClass( "is-invalid" );
+			
+		// Hide the output elem
+		outputElem.hide();
+		errorElem.hide();
+	
+		let mj;
+		let inputVal = $( this ).val();
+		
+		// No need to do anything if the input field is empty
+		if ( inputVal === "" ) {
+			return;
+		}
+
+		try {
+			let frac = new Fraction( inputVal );
+			mj = frac.getMathjax();
+		}
+		catch ( e ) {
+			$( this ).addClass( "is-invalid" );
+			errorElem.html( e );
+			errorElem.show();
+			mj = "";
+		}
+			
+		// Set the mathjax into the DOM
+		outputElem.html( mj );
+		
+		// Render Mathjax and show it
+		MathJax.Hub.Queue( [ "Typeset", MathJax.Hub, outputElem.attr( "id" ) ] );
+		MathJax.Hub.Queue( function() { outputElem.show() } );
+	};
+}
+
+$( function() {
+
+	let outputElem = $( "#output-frac" );
+	let errorElem = $( "#error-msg" );
+
+	$( "#input-frac" ).keyup( handleKeyup( outputElem, errorElem ) );
+} );
+	
+	</script>
+  </body>
+</html>

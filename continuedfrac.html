@@ -127,7 +127,6 @@ Fraction.prototype.getSigns = function() {
 
 Fraction.prototype.getLatex = function() {
 
-
 	// This will hold our "cfrac" tokens
 	let str1 = [];
 	
@@ -180,8 +179,7 @@ function handleKeyup( outputElem, errorElem ) {
 		}
 		catch ( e ) {
 			$( this ).addClass( "is-invalid" );
-			errorElem.html( e );
-			errorElem.show();
+			errorElem.html( e ).show();
 			mj = "";
 		}
 			
@@ -190,7 +188,7 @@ function handleKeyup( outputElem, errorElem ) {
 		
 		// Render Mathjax and show it
 		MathJax.Hub.Queue( [ "Typeset", MathJax.Hub, outputElem.attr( "id" ) ] );
-		MathJax.Hub.Queue( function() { outputElem.show() } );
+		MathJax.Hub.Queue( outputElem.show );
 	};
 }
 

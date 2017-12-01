@@ -89,6 +89,22 @@ GaussianRational.prototype.isUnit = function() {
 	return this.getNumerator().isUnit() && this.getDenominator().isUnit();
 };
 
+GaussianRational.prototype.isNegativeOne = function() {
+	return this.isUnit() && this.getNumerator().getRealPart() === -1 && this.getDenominator().getRealPart() === 1;
+};
+
+GaussianRational.prototype.isPositiveOne = function() {
+	return this.isUnit() && this.getNumerator().getRealPart() === 1 && this.getDenominator().getRealPart() === 1;
+};
+
+GaussianRational.prototype.isImaginaryOne = function() {
+	return this.isUnit() && this.getNumerator().getImaginaryPart() === 1 && this.getDenominator().getRealPart() === 1;
+};
+
+GaussianRational.prototype.isNegImaginaryOne = function() {
+	return this.isUnit() && this.getNumerator().getImaginaryPart() === -1 && this.getDenominator().getRealPart() === 1;
+};
+
 // Is the fraction equal to the input fraction
 GaussianRational.prototype.equals = function( frac ) {
 	return this.getNumerator().equals( frac.getNumerator() ) && this.getDenominator().equals( frac.getDenominator() );
@@ -252,8 +268,8 @@ GaussianRational.prototype.iterate = function() {
 		return n.getNorm();
 	} );
 
-	// Figure out which operation resulted in the smallest norm
-	let minNorm = Math.min.apply( null, norms );
+	// Figure out which operation resulted in the smallest norm (greater than zero)
+	let minNorm = Math.min.apply( null, norms.filter( Boolean ) );
 	let op = norms.indexOf( minNorm );
 
 	// Create a new rational after inversion
@@ -264,6 +280,29 @@ GaussianRational.prototype.iterate = function() {
 
 	// Return the operation number and the resulting value
 	return { op : op, val: frac };
+};
+
+GaussianRational.prototype.getTailOps = function() {
+	
+	// Handle 1/1
+	if ( this.isPositiveOne() ) {
+		return { ops: [], val: new GaussianInt( 1, 0 ) };
+	}
+
+	// Handle -1/1
+	if ( this.isNegativeOne() ) {
+		return { ops: [ 2, 4, 2 ], val: new GaussianInt( 1, 0 ) };
+	}
+
+	// Handle i/1
+	if ( this.isImaginaryOne() ) {
+		return { ops: [], val: new GaussianInt( 0, 1 ) };
+	}
+
+	// Handle
+	if ( this.isNegImaginaryOne() ) {
+		return { ops: [], val: new GaussianInt( 0, 1 ) };
+	}
 };
 
 GaussianRational.prototype.decompose = function() {
@@ -279,7 +318,11 @@ GaussianRational.prototype.decompose = function() {
 		frac = res.val.normalize();
 	}
 
-	return { ops: ops, seed: frac };
+	// Append the tail for this seed
+	let tail = frac.getTailOps();
+	ops = ops.concat( tail.ops );
+
+	return { ops: ops, seed: tail.val };
 };
 
 //===========================================//
@@ -290,7 +333,7 @@ function GaussianReducer( inputNum, inputDen ) {
 	let den = this.parse( inputDen );
 
 	let frac = new GaussianRational( num, den );
-	let reduced = frac.reduceToLowestTerms();
+	let reduced = frac.clone().reduceToLowestTerms();
 
 	// Save the raw fraction
 	this.rawFrac = frac;
@@ -314,7 +357,7 @@ GaussianReducer.prototype.parse = function( str ) {
 	
 	// If the input string cannot be parsed, throw error
 	if ( found === null ) {
-		throw "Invalid IFraction: " + str;
+		throw "Invalid Gaussian Fraction: " + str;
 	}
 	
 	// Convert matched tokens to ints

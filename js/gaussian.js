@@ -1,16 +1,20 @@
+// Constructor for new GaussianInt objects
 function GaussianInt( re, im ) {
-	this.re = re;
-	this.im = im;
+	this.re = Math.round( re );
+	this.im = Math.round( im );
 }
 
+// Getter for real component
 GaussianInt.prototype.getRealPart = function() {
 	return this.re;
 };
 
+// Getter for imaginary component
 GaussianInt.prototype.getImaginaryPart = function() {
 	return this.im;
 };
 
+// Flips sign on both real and imaginary components
 GaussianInt.prototype.negate = function() {
 	this.re = -this.re;
 	this.im = -this.im;
@@ -21,6 +25,7 @@ GaussianInt.prototype.clone = function() {
 	return new GaussianInt( this.re, this.im );
 };
 
+// Returns true if real and imaginary components match the given input
 GaussianInt.prototype.equals = function( val ) {
 	return this.getRealPart() === val.getRealPart() && this.getImaginaryPart() === val.getImaginaryPart();
 };
@@ -35,22 +40,88 @@ GaussianInt.prototype.isUnit = function() {
 	return this.getNorm() === 1;
 };
 
+// Returns true if both real and imaginary parts are zero
 GaussianInt.prototype.isZero = function() {
   return this.getNorm() === 0;
 };
 
 GaussianInt.prototype.print = function() {
-	if ( this.getImaginaryPart() === 0 ) {
-		return this.getRealPart();
+
+	let re = this.getRealPart();
+	let im = this.getImaginaryPart();
+
+	// Handle zero
+	if ( re === 0 && im === 0 ) {
+		return "0";
 	}
 
-	if ( this.getRealPart() === 0 ) {
-		return this.getImaginaryPart() + "i";
+	// Handle pure real
+	if ( im === 0 ) {
+		return re;
 	}
 
-	return this.getRealPart() + ( this.getImaginaryPart() < 0 ? "-" : "+" ) + Math.abs( this.getImaginaryPart() ) + "i";
+	// Handle pure imaginary
+	if ( re === 0 ) {
+		switch ( im ) {
+			case 1:
+				return "i";
+			case -1:
+				return "-i";
+			default:
+				return im + "i";
+		}
+	}
+
+	// Handle mixed case with -1i
+	if ( im === -1 ) {
+		return re + "-i";
+	}
+
+	// Handle mixed case with +1i
+	if ( im === 1 ) {
+		return re + "+i";
+	}
+
+	// Handle mixed case with positive imaginary part
+	if ( im > 1 ) {
+		return re + "+" + im + "i";
+	}
+
+	// Handle mixed case with negative imaginary part
+	if ( im < 1 ) {
+		return re + "-" + Math.abs( im ) + "i";
+	}
+
+	return "?";
 };
 
+// Subtracts the given gaussian int from the gaussian int to produce a new gaussian int
+GaussianInt.prototype.add = function( toAdd ) {
+
+	// Calculate the real part
+	let re = this.getRealPart() + toAdd.getRealPart();
+
+	// Calcualte the imaginary part
+	let im = this.getImaginaryPart() + toAdd.getImaginaryPart();
+
+	// Construct the subtracted value
+	return new GaussianInt( re, im );
+};
+
+// Subtracts the given gaussian int from the gaussian int to produce a new gaussian int
+GaussianInt.prototype.subtract = function( sub ) {
+
+	// Calculate the real part
+	let re = this.getRealPart() - sub.getRealPart();
+
+	// Calcualte the imaginary part
+	let im = this.getImaginaryPart() - sub.getImaginaryPart();
+
+	// Construct the subtracted value
+	return new GaussianInt( re, im );
+};
+
+// Divides the gaussian int by the given gaussian int to produce a new gaussian int
 GaussianInt.prototype.divide = function( divisor ) {
 
 	// Calculate the real part after division by the GCD
@@ -62,6 +133,39 @@ GaussianInt.prototype.divide = function( divisor ) {
 	// Construct the reduced value
 	return new GaussianInt( re, im );
 };
+
+// Multiplies the gaussian int by the given gaussian int to produce a new gaussian int
+GaussianInt.prototype.multiply = function( mult ) {
+
+	// Calculate the real part of the product
+	let re = this.getRealPart() * mult.getRealPart() - this.getImaginaryPart() * mult.getImaginaryPart();
+
+	// Calculate the imaginary part of the product
+	let im = this.getRealPart() * mult.getImaginaryPart() + this.getImaginaryPart() * mult.getRealPart();
+
+	// Construct the product
+	return new GaussianInt( re, im );
+};
+
+//===========================================//
+
+class GaussianConsts {
+	static one() {
+		return new GaussianInt( 1, 0 );
+	}
+
+	static negativeOne() {
+		return new GaussianInt( -1, 0 );
+	}
+
+	static i() {
+		return new GaussianInt( 0, 1 );
+	}
+
+	static negativeI() {
+		return new GaussianInt( 0, -1 );
+	}
+}
 
 //===========================================//
 
@@ -85,22 +189,27 @@ GaussianRational.prototype.clone = function() {
 	return new GaussianRational( this.getNumerator().clone(), this.getDenominator().clone() );
 };
 
+// Returns true if numerator and denominator are both norm 1
 GaussianRational.prototype.isUnit = function() {
 	return this.getNumerator().isUnit() && this.getDenominator().isUnit();
 };
 
+// Returns true if fraction is -1/1
 GaussianRational.prototype.isNegativeOne = function() {
 	return this.isUnit() && this.getNumerator().getRealPart() === -1 && this.getDenominator().getRealPart() === 1;
 };
 
+// Returns true if fraction is 1/1
 GaussianRational.prototype.isPositiveOne = function() {
 	return this.isUnit() && this.getNumerator().getRealPart() === 1 && this.getDenominator().getRealPart() === 1;
 };
 
+// Returns true if fraction is i/1
 GaussianRational.prototype.isImaginaryOne = function() {
 	return this.isUnit() && this.getNumerator().getImaginaryPart() === 1 && this.getDenominator().getRealPart() === 1;
 };
 
+// Returns true if fraction is -i/1
 GaussianRational.prototype.isNegImaginaryOne = function() {
 	return this.isUnit() && this.getNumerator().getImaginaryPart() === -1 && this.getDenominator().getRealPart() === 1;
 };
@@ -121,53 +230,34 @@ GaussianRational.prototype.invert = function() {
 	let temp = this.getNumerator();
 	this.num = this.getDenominator();
 	this.den = temp;
+
+	// Return object for chaining
+	return this;
 };
 
+// Outputs latex code for printing fraction
 GaussianRational.prototype.print = function() {
 	return "\\cfrac{" + this.getNumerator().print() + "}{" + this.getDenominator().print() + "}";
-};
-
-GaussianRational.prototype.getNearestGaussianInt = function() {
-
-	let num = this.getNumerator();
-	let den = this.getDenominator();
-  
-	// Compute the real part of the quotient
-	let newRe = ( num.getRealPart() * den.getRealPart() + num.getImaginaryPart() * den.getImaginaryPart() ) / den.getNorm();
-  
-	// Compute the imaginary part of the quotient
-	let newIm = ( num.getImaginaryPart() * den.getRealPart() - num.getRealPart() * den.getImaginaryPart() ) / den.getNorm();
-  
-	// Round the real part to nearest integer
-	let roundRe = Math.round( newRe );
-
-	// Round the imaginary part to nearest integer
-	let roundIm = Math.round( newIm );
-  
-	// Return the rounded value
-	return new GaussianInt( roundRe, roundIm );
 };
 
 GaussianRational.prototype.getRemainder = function() {
 
 	// Divide numerator by denominator and get nearest integer
-	let near = this.getNearestGaussianInt();
+	let near = this.getNumerator().divide( this.getDenominator() );
 
-	let num = this.getNumerator();
-	let den = this.getDenominator();
+	// Compute the product of the nearest integer and the denominator
+	let prod = this.getDenominator().multiply( near );
 
-	let r1 = num.getRealPart() - ( den.getRealPart() * near.getRealPart() - den.getImaginaryPart() * near.getImaginaryPart() );
-	let r2 = num.getImaginaryPart() - ( den.getRealPart() * near.getImaginaryPart() + den.getImaginaryPart() * near.getRealPart() );
-
-	return new GaussianInt( r1, r2 );
+	// Subtract the product from the numerator to get the remainder
+	return this.getNumerator().subtract( prod );
 };
 
 GaussianRational.prototype.normalize = function() {
 
-	// If the denominator is pure imaginary, turn into pure real
+	// If the denominator is pure imaginary, turn into pure real by multiplying by -i/-i
 	if ( this.getDenominator().getRealPart() === 0 ) {
-		this.num = new GaussianInt( this.getNumerator().getImaginaryPart(), -this.getNumerator().getRealPart() );
-		this.den = new GaussianInt( this.getDenominator().getImaginaryPart(), 0 );
+		this.num = this.getNumerator().multiply( GaussianConsts.negativeI() );
+		this.den = this.getDenominator().multiply( GaussianConsts.negativeI() );
 	}
   
 	// If the denominator is real and negative, flip signs
@@ -177,8 +267,8 @@ GaussianRational.prototype.normalize = function() {
 
 	// If the numerator and denominator are the same, replace with 1
 	if ( this.getNumerator().equals( this.getDenominator() ) ) {
-		this.num = new GaussianInt( 1, 0 );
-		this.den = new GaussianInt( 1, 0 );
+		this.num = GaussianConsts.one();
+		this.den = GaussianConsts.one();
 	}
 
 	// Return the object for chaining
@@ -198,13 +288,24 @@ GaussianRational.prototype.getGCD = function() {
 	// Calculate the remainder upon division
 	let remainder = frac.getRemainder();
 
+	// If we have zero remainder, then our denominator is our GCD
+	if ( remainder.isZero() ) {
+		return frac.getDenominator();
+	}
+
 	// To start, we'll assume the denominator is the GCD
 	let gcd = frac.getDenominator();
 	let i = 0;
   
+  	// Keep reducing until we have zero remainder
 	do {
+		// Our GCD is our remainder prior to updating
 		gcd = remainder;
-		frac = new GaussianRational( frac.getDenominator(), remainder )
+
+		// Build a new fraction using the prior denominator and prior remainder
+		frac = new GaussianRational( frac.getDenominator(), remainder );
+
+		// Compute our new remainder
 		remainder = frac.getRemainder();
 
 		if ( i++ > 50 ) {
@@ -225,6 +326,7 @@ GaussianRational.prototype.reduce = function( gcd ) {
 	// Divide the denominator by the GCD
 	this.den = this.getDenominator().divide( gcd );
 
+	// Return object for chaining
 	return this;
 };
 
@@ -245,22 +347,16 @@ GaussianRational.prototype.iterate = function() {
 	var nums = [
 
 		// 1/(x-i)
-		new GaussianInt( den.getRealPart() - num.getImaginaryPart(), num.getRealPart() + den.getImaginaryPart() ),
+		den.add( num.multiply( GaussianConsts.i() ) ),
 
 		// 1/(i+x)
-		new GaussianInt( num.getImaginaryPart() + den.getRealPart(), den.getImaginaryPart() - num.getRealPart() ),
+		den.subtract( num.multiply( GaussianConsts.i() ) ),
 
 		// 1/(1+x)
-		new GaussianInt( den.getRealPart() - num.getRealPart(), den.getImaginaryPart() - num.getImaginaryPart() ),
-
-		// 1/(1-x)
-		new GaussianInt( num.getRealPart() - den.getRealPart(), num.getImaginaryPart() - den.getImaginaryPart() ),
+		den.subtract( num ),
 
 		// 1/(x-1)
-		new GaussianInt( num.getRealPart() + den.getRealPart(), num.getImaginaryPart() + den.getImaginaryPart() ),
-
-		// 1/(i-x)
-		new GaussianInt( -num.getImaginaryPart() - den.getRealPart(), num.getRealPart() - den.getImaginaryPart() )
+		den.add( num )
 	];
 
 	// Get the norm of each numerator
@@ -284,24 +380,24 @@ GaussianRational.prototype.iterate = function() {
 
 GaussianRational.prototype.getTailOps = function() {
 	
-	// Handle 1/1
+	// Handle 1
 	if ( this.isPositiveOne() ) {
-		return { ops: [], val: new GaussianInt( 1, 0 ) };
+		return { ops: [], val: GaussianConsts.one(), inverted: false };
 	}
 
-	// Handle -1/1
+	// Handle -1
 	if ( this.isNegativeOne() ) {
-		return { ops: [ 2, 4, 2 ], val: new GaussianInt( 1, 0 ) };
+		return { ops: [ 2, 3, 2 ], val: GaussianConsts.one(), inverted: false };
 	}
 
-	// Handle i/1
+	// Handle i
 	if ( this.isImaginaryOne() ) {
-		return { ops: [], val: new GaussianInt( 0, 1 ) };
+		return { ops: [], val: GaussianConsts.i(), inverted: false };
 	}
 
-	// Handle
+	// Handle -i
 	if ( this.isNegImaginaryOne() ) {
-		return { ops: [], val: new GaussianInt( 0, 1 ) };
+		return { ops: [], val: GaussianConsts.i(), inverted: true };
 	}
 };
 
@@ -310,11 +406,19 @@ GaussianRational.prototype.decompose = function() {
 	// Reduce the fraction to lowest terms
 	let frac = this.reduceToLowestTerms();
 
+	// This will be our sequence of operations
 	let ops = [];
 
+	// Continue iterating until we're left with a unit
 	while ( !frac.isUnit() ) {
+
+		// Iterate the fraction
 		let res = frac.iterate();
+
+		// Add the operation code to our list
 		ops.push( res.op );
+
+		// Normalize the resulting fraction
 		frac = res.val.normalize();
 	}
 
@@ -322,7 +426,8 @@ GaussianRational.prototype.decompose = function() {
 	let tail = frac.getTailOps();
 	ops = ops.concat( tail.ops );
 
-	return { ops: ops, seed: tail.val };
+	// Return our operations, the final seed and the inversion flag
+	return { ops: ops, seed: tail.val, inverted: tail.inverted };
 };
 
 //===========================================//
@@ -352,18 +457,48 @@ GaussianReducer.prototype.getMaxLenth = function() {
 
 GaussianReducer.prototype.parse = function( str ) {
 
-	// Look for digits, a slash and more digits
-	var found = str.match( /^\s*(\-?\d+)([\+\-])(\d+)i\s*$/ );
-	
-	// If the input string cannot be parsed, throw error
-	if ( found === null ) {
-		throw "Invalid Gaussian Fraction: " + str;
+	// Match mixed case
+	let found = str.match( /^\s*(\-?\d+)([\+\-])(\d*)i\s*$/ );
+
+	if ( found ) {
+		return this.buildInt( found[ 1 ], found[ 2 ], found[ 3 ] );
+	}
+
+	// Match pure real
+	let found2 = str.match( /^\s*(\-?\d+)\s*$/ );
+
+	if ( found2 ) {
+		return this.buildInt( found2[ 1 ], "+", "0" );
+	}
+
+	// Match pure imaginary
+	let found3 = str.match( /^\s*(\-?)(\d*)i\s*$/ );
+
+	if ( found3 ) {
+		return this.buildInt( "0", found3[ 1 ], found3[ 2 ] );
 	}
 	
+	// We couldn't parse any of the formats
+	throw "Invalid Gaussian Fraction: " + str;
+	
+};
+
+GaussianReducer.prototype.buildInt = function( reStr, signStr, imStr ) {
+
+	if ( reStr === "" ) {
+		reStr = "1";
+	}
+	if ( signStr === "" ) {
+		signStr = "+";
+	}
+	if ( imStr === "" ) {
+		imStr = "1";
+	}
+
 	// Convert matched tokens to ints
-	let re = parseInt( found[ 1 ] );
-	let sign = ( found[ 2 ] === "-" ? -1 : 1 );
-	let im = sign * parseInt( found[ 3 ] );
+	let re = parseInt( reStr );
+	let sign = ( signStr === "-" ? -1 : 1 );
+	let im = sign * parseInt( imStr );
 	
 	// Return components of IFraction
 	return new GaussianInt( re, im );
@@ -393,6 +528,7 @@ GaussianReducer.prototype.getLatex = function() {
 	// Pull out the list of operations and the final seed
 	let ops = decomp.ops;
 	let seed = decomp.seed;
+	let inverted = decomp.inverted;
 
 	// If our expansion is longer than the max lenth, throw error
 	if ( ops.length > this.getMaxLenth() ) {
@@ -418,25 +554,17 @@ GaussianReducer.prototype.getLatex = function() {
 				str1.push( "\\cfrac1{" );
 				str2.unshift( "+1}" );
 				break;
-			// 1/(1-x)
-			case 3:
-				str1.push( "\\cfrac1{1-" );
-				str2.unshift( "}" );
-				break;
 			// 1/(x-1)
-			case 4:
+			case 3:
 				str1.push( "\\cfrac1{" );
 				str2.unshift( "-1}" );
-				break;
-			// 1/(i-x)
-			case 5:
-				str1.push( "\\cfrac1{i-" );
-				str2.unshift( "}" );
 				break;
 		}
 	} );
 	
+	let seedStr = ( inverted ? "\\cfrac1{" + seed.print() + "}" : seed.print() );
+
 	// Build final latex string
-	return str1.join( "" ) + seed.print() + str2.join( "" );
+	return str1.join( "" ) + seedStr + str2.join( "" );
 };
 

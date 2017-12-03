@@ -25,6 +25,11 @@
 	font-weight: bold;
 	color: red;
 }
+
+.divider {
+  margin: 5px 0px;
+  border-top: 3px solid #777777;
+}
     </style>
 
   </head>
@@ -57,11 +62,32 @@
 
     <main role="main">
       <div class="row">
-        <div class="col-md-4 offset-4">
+        <div class="col-md-2 offset-5">
           <label for="input-frac" class="form-label" id="input-label">Enter Fraction</label>
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+      <div class="row">
+        <div class="col-md-2 offset-5">
           <input type="text" class="form-control" id="input-frac1" placeholder="ex: 5+3i">
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+
+      <div class="row">
+        <div class="col-md-2 offset-5">
+          <hr class="divider" />
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+
+      <div class="row">
+        <div class="col-md-2 offset-5">
           <input type="text" class="form-control" id="input-frac2" placeholder="ex: 1-2i">
+        </div><!-- /.col-lg-4 -->
+        <div class="col-md-2">
           <button type="button" class="btn btn-primary" id="calc-button">Go</button>
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+      <div class="row">
+        <div class="col-md-4 offset-5">
           <div id="error-msg" style="display:none"></div>
         </div><!-- /.col-lg-4 -->
       </div><!-- /.row -->
@@ -82,7 +108,10 @@ MathJax.Hub.Config({
 });
     </script>
 
-    <script src="../js/gaussian.js" type="text/javascript"></script>
+    <script src="../js/GaussianInt.js" type="text/javascript"></script>
+    <script src="../js/GaussianConsts.js" type="text/javascript"></script>
+    <script src="../js/GaussianRational.js" type="text/javascript"></script>
+    <script src="../js/GaussianReducer.js" type="text/javascript"></script>
 
 	<script type="text/javascript">
 

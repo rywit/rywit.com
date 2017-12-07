@@ -116,7 +116,7 @@ class GaussianReducer {
 
 		// Build each token as we descend down the expansion
 		const str1 = decomp.ops.map( x => "\\cfrac1{" );
-		const str2 = decomp.ops.map( GaussianReducer.getAddend );
+		const str2 = decomp.ops.map( GaussianReducer.getAddend ).reverse();
 
 		// Build the string represntation of our initial seed (1, i, 1/i)		
 		const seedStr = ( decomp.inverted ? "\\cfrac1{" + decomp.seed.print() + "}" : decomp.seed.print() );

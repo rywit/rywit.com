@@ -1,8 +1,20 @@
 class GaussianRational {
 
-	constructor( num, den ) {
+	constructor( num, den, shouldNormalize = false, shouldReduce = false ) {
 		this.num = num;
 		this.den = den;
+
+		if ( shouldReduce ) {
+			let res = this.reduceToLowestTerms( shouldNormalize );
+			this.num = res.getNumerator();
+			this.den = res.getDenominator();
+		}
+
+		if ( shouldNormalize ) {
+			let res = this.normalize();
+			this.num = res.getNumerator();
+			this.den = res.getDenominator();
+		}
 	}
 
 	// Getter for numerator GaussianInt
@@ -18,6 +30,10 @@ class GaussianRational {
 	// Returns a clone of the current object
 	clone() {
 		return new GaussianRational( this.getNumerator().clone(), this.getDenominator().clone() );
+	}
+
+	getNorm() {
+		return this.getNumerator().getNorm() + this.getDenominator().getNorm();
 	}
 
 	// Returns true if numerator and denominator are both norm 1
@@ -36,12 +52,12 @@ class GaussianRational {
 	}
 
 	// Returns true if fraction is i/1
-	isImaginaryOne() {
+	isPositiveI() {
 		return this.isUnit() && this.getNumerator().getImaginaryPart() === 1 && this.getDenominator().getRealPart() === 1;
 	}
 
 	// Returns true if fraction is -i/1
-	isNegImaginaryOne() {
+	isNegativeI() {
 		return this.isUnit() && this.getNumerator().getImaginaryPart() === -1 && this.getDenominator().getRealPart() === 1;
 	}
 
@@ -50,14 +66,48 @@ class GaussianRational {
 		return this.getNumerator().equals( frac.getNumerator() ) && this.getDenominator().equals( frac.getDenominator() );
 	}
 
-	// Negates the numerator and denominator
+	// Negates the numerator
 	negate() {
-		return new GaussianRational( this.getNumerator().negate(), this.getDenominator().negate() );
+		return new GaussianRational( this.getNumerator().negate(), this.getDenominator(), true );
+	}
+
+	// Flips numerator and denominator
+	invert() {
+		return new GaussianRational( this.getDenominator(), this.getNumerator(), true );
 	}
 
 	// Outputs latex code for printing fraction
-	print() {
+	printLatex() {
+
+		if ( this.isPositiveOne() ) {
+			return "1";
+		}
+		else if ( this.isNegativeOne() ) {
+			return "-1";
+		}
+		else if ( this.isPositiveI() ) {
+			return "i";
+		}
+		else if ( this.isNegativeI() ) {
+			return "-i";
+		}
+
 		return "\\cfrac{" + this.getNumerator().print() + "}{" + this.getDenominator().print() + "}";
+	}
+
+	add( frac, shouldNormalize = true, shouldReduce = true ) {
+		let numA = this.getNumerator().multiply( frac.getDenominator() );
+		let numB = frac.getNumerator().multiply( this.getDenominator() );
+
+		let num = numA.add( numB );
+		let den = this.getDenominator().multiply( frac.getDenominator() );
+
+		return new GaussianRational( num, den, shouldNormalize, shouldReduce );
+	}
+
+	subtract( frac, shouldNormalize = true, shouldReduce = true ) {
+		// Subtraction is the same as adding a negative
+		return this.add( frac.negate(), shouldNormalize, shouldReduce );
 	}
 
 	normalize() {
@@ -74,19 +124,24 @@ class GaussianRational {
 	  
 		// If the denominator is real and negative, flip signs
 		if ( normalized.getDenominator().getRealPart() < 0 ) {
-			normalized = normalized.negate();
+			let num = normalized.getNumerator().negate();
+			let den = normalized.getDenominator().negate();
+
+			normalized = new GaussianRational( num, den );
 		}
 
 		// If the numerator and denominator are the same, replace with 1
 		if ( normalized.getNumerator().equals( normalized.getDenominator() ) ) {
-			normalized = new GaussianRational( GaussianConsts.one(), GaussianConsts.one() );
+			normalized = new GaussianRational( GaussianConsts.positiveOne(), GaussianConsts.positiveOne() );
 		}
 
-		// Return the normalized object
 		return normalized;
 	}
 
-	reduce( gcd ) {
+	reduceToLowestTerms( shouldNormalize = true ) {
+
+		// Calculate the GCD of the two guassian ints
+		const gcd = GaussianInt.getGCD( this.getNumerator(), this.getDenominator() );
 
 		// Divide the numerator by the GCD
 		const num = this.getNumerator().divide( gcd ); 
@@ -95,101 +150,6 @@ class GaussianRational {
 		const den = this.getDenominator().divide( gcd );
 
 		// Return object for chaining
-		return new GaussianRational( num, den );
-	}
-
-	reduceToLowestTerms() {
-
-		// Calculate the GCD of the two guassian ints
-		const gcd = GaussianInt.getGCD( this.getNumerator(), this.getDenominator() );
-
-		// Reduce the numerator and denominator by GCD, normalize and return
-		return this.reduce( gcd ).normalize();
-	}
-
-	iterate() {
-
-		const num = this.getNumerator();
-		const den = this.getDenominator();
-
-		const nums = [
-
-			// 1/(x-i)
-			den.add( num.multiply( GaussianConsts.i() ) ),
-
-			// 1/(i+x)
-			den.subtract( num.multiply( GaussianConsts.i() ) ),
-
-			// 1/(1+x)
-			den.subtract( num ),
-
-			// 1/(x-1)
-			den.add( num )
-		];
-
-		// Get the norm of each numerator
-		const norms = nums.map( x => x.getNorm() );
-
-		// Figure out which operation resulted in the smallest norm (greater than zero)
-		const minNorm = Math.min.apply( null, norms.filter( Boolean ) );
-		const op = norms.indexOf( minNorm );
-
-		// Create a new rational after inversion
-		const frac = new GaussianRational( nums[ op ], num );
-
-		// Return the operation number and the resulting value
-		return { op : op, val: frac.normalize() };
-	}
-
-	getTailOps() {
-		
-		// Handle 1
-		if ( this.isPositiveOne() ) {
-			return { ops: [], val: GaussianConsts.one(), inverted: false };
-		}
-
-		// Handle -1
-		if ( this.isNegativeOne() ) {
-			return { ops: [ 2, 3, 2 ], val: GaussianConsts.one(), inverted: false };
-		}
-
-		// Handle i
-		if ( this.isImaginaryOne() ) {
-			return { ops: [], val: GaussianConsts.i(), inverted: false };
-		}
-
-		// Handle -i
-		if ( this.isNegImaginaryOne() ) {
-			return { ops: [], val: GaussianConsts.i(), inverted: true };
-		}
-	}
-
-	decompose() {
-
-		// Reduce the fraction to lowest terms
-		let frac = this.reduceToLowestTerms();
-
-		// This will be our sequence of operations
-		let ops = [];
-
-		// Continue iterating until we're left with a unit
-		while ( !frac.isUnit() ) {
-
-			// Iterate the fraction
-			const res = frac.iterate();
-
-			// Add the operation code to our list
-			ops.push( res.op );
-
-			// Normalize the resulting fraction
-			frac = res.val.normalize();
-		}
-
-		// Append the tail for this seed
-		const tail = frac.getTailOps();
-		ops = ops.concat( tail.ops );
-
-		// Return our operations, the final seed and the inversion flag
-		return { ops: ops, seed: tail.val, inverted: tail.inverted };
+		return new GaussianRational( num, den, shouldNormalize );
 	}
 }

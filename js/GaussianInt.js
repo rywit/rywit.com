@@ -59,30 +59,9 @@ class GaussianInt {
 		return new GaussianInt( re, im );
 	}
 
-	// Subtracts the given gaussian int from the gaussian int to produce a new gaussian int
+	// Subtraction is simply addition by the negative of the given input
 	subtract( sub ) {
-
-		// Calculate the real part
-		const re = this.getRealPart() - sub.getRealPart();
-
-		// Calcualte the imaginary part
-		const im = this.getImaginaryPart() - sub.getImaginaryPart();
-
-		// Construct the subtracted value
-		return new GaussianInt( re, im );
-	}
-
-	// Divides the gaussian int by the given gaussian int to produce a new gaussian int
-	divide( divisor ) {
-
-		// Calculate the real part after division by the GCD
-		const re = ( this.getRealPart() * divisor.getRealPart() + this.getImaginaryPart() * divisor.getImaginaryPart() ) / divisor.getNorm();
-
-		// Calculate the imaginary part after division by the GCD
-		const im = ( this.getImaginaryPart() * divisor.getRealPart() - this.getRealPart() * divisor.getImaginaryPart() ) / divisor.getNorm();
-
-		// Construct the reduced value
-		return new GaussianInt( re, im );
+		return this.add( sub.negate() );
 	}
 
 	// Multiplies the gaussian int by the given gaussian int to produce a new gaussian int
@@ -98,6 +77,20 @@ class GaussianInt {
 		return new GaussianInt( re, im );
 	}
 
+	// Divides the gaussian int by the given gaussian int to produce a new gaussian int
+	divide( div ) {
+
+		// Calculate the real part after division by the GCD
+		const re = ( this.getRealPart() * div.getRealPart() + this.getImaginaryPart() * div.getImaginaryPart() ) / div.getNorm();
+
+		// Calculate the imaginary part after division by the GCD
+		const im = ( this.getImaginaryPart() * div.getRealPart() - this.getRealPart() * div.getImaginaryPart() ) / div.getNorm();
+
+		// Construct the reduced value
+		return new GaussianInt( re, im );
+	}
+
+	// Calculates the remainder upon division by the given input
 	getRemainder( toDivide ) {
 
 		// Divide numerator by denominator and get nearest integer
@@ -158,16 +151,18 @@ class GaussianInt {
 			return re + "-" + Math.abs( im ) + "i";
 		}
 
-		return "?";
+		throw "Unable to print Gaussian integer: (" + re + ", " + im + ")";
 	}
 
 	static getGCD( intA, intB ) {
 
-		const normA = intA.getNorm();
-		const normB = intB.getNorm();
+		// If either input is zero, then define the GCD to be 1
+		if ( intA.isZero() || intB.isZero() ) {
+			return GaussianConsts.positiveOne();
+		}
 
-		let larger = ( normA > normB ? intA : intB );
-		let smaller = ( normA > normB ? intB : intA );
+		// Determine which of our two inputs is larger
+		let [ larger, smaller ] = ( intA.getNorm() > intB.getNorm() ? [ intA, intB ] : [ intB, intA ] );
 
 		// Calculate the remainder upon division
 		let remainder = larger.getRemainder( smaller );
@@ -199,8 +194,12 @@ class GaussianInt {
 		}
 		while ( !remainder.isZero() );
 
+		// If the GCD is 1 or -1 or i or -i, just return 1
+		if ( gcd.isUnit() ) {
+			return GaussianConsts.positiveOne();
+		}
+
 		// Return the greatest common divisor
 		return gcd;
 	}
-
 }
